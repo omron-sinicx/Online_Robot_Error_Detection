@@ -41,7 +41,7 @@ authors:
     affiliation: [2]
     url:
     position: Professor
-contact_ids: ['omron', 3] #=> contact@sinicx.com, 3rd author
+contact_ids: ['omron', 1] #=> contact@sinicx.com, 3rd author
 affiliations:
   - OMRON SINIC X Corporation
   - National Taiwan University
