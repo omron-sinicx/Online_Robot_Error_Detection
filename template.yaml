@@ -1,264 +1,166 @@
 theme: default # default || dark
 organization: OMRON SINIC X
 twitter: '@omron_sinicx'
-title: 'Multi-Agent Behavior Retrieval: Retrieval-Augmented Policy Training for Cooperative Manipulation by Mobile Robots'
-conference: IROS2024
+title: 'Online Robot Error Detection and Description via Video Temporal Grounding'
+conference: CoRL2026
 resources:
-  paper: https://arxiv.org/abs/1909.13111
+  paper: # TODO: arXiv / OpenReview link
   poster:
-  code: https://github.com/omron-sinicx/multipolar
-  video: https://www.youtube.com/embed/W8nBFKDxsb0
-  blog: https://medium.com/sinicx/multipolar-multi-source-policy-aggregation-for-transfer-reinforcement-learning-between-diverse-bc42a152b0f5
-  demo: https://colab.research.google.com/
-  huggingface: https://huggingface.co/
-description: explore a new challenge in transfer RL, where only a set of source policies collected under unknown diverse dynamics is available for learning a target task efficiently.
-image: https://omron-sinicx.github.io/${your-repository-name}/teaser.png
-url: https://omron-sinicx.github.io/${your-repository-name}
-speakerdeck: b7a0614c24014dcbbb121fbb9ed234cd
+  code: # TODO: https://github.com/omron-sinicx/stream-fail
+  video:
+  blog:
+  demo:
+  huggingface: # TODO: DETECT-DROID-FAILURE dataset link
+description: We formulate robot failure detection as online video temporal grounding, predicting the temporal boundaries and a cause-and-effect description of each manipulation failure as the video streams.
+image: https://omron-sinicx.github.io/stream-fail/teaser.png
+url: https://omron-sinicx.github.io/stream-fail
+speakerdeck:
 authors:
-  - name: So Kuroki
+  - name: Yung-Shun Chan
     affiliation: [1, 2]
-    url: http://barekatain.me/
+    mark: '*'
+    url:
     position: intern
-  - name: Mai Nishimura
+  - name: Kuniaki Saito
     affiliation: [1]
+    url: https://ksaito-ut.github.io/
     position: Senior Researcher
-    url: https://denkiwakame.github.io
-  - name: Tadashi Kozuno
+  - name: Cristian C. Beltran-Hernandez
     affiliation: [1]
+    url:
     position: Senior Researcher
+  - name: Jeremy A. Siburian
+    affiliation: [1]
+    url:
+    position: Researcher
+  - name: Masashi Hamaya
+    affiliation: [1]
     url: https://sites.google.com/view/masashihamaya/home
-    #  - name: Mai Nishimura
-    #    affiliation: [1]
-    #    url: https://denkiwakame.github.io
-    #  - name: Asako Kanezaki
-    #    affiliation: [2]
-    #    url: https://kanezaki.github.io/
-contact_ids: ['github', 'omron', 2] #=> github issues, contact@sinicx.com, 2nd author
+    position: Principal Investigator
+  - name: Chun-Yi Lee
+    affiliation: [2]
+    url:
+    position: Professor
+contact_ids: ['omron', 3] #=> contact@sinicx.com, 3rd author
 affiliations:
   - OMRON SINIC X Corporation
-  - Technical University of Munich
+  - National Taiwan University
 meta:
   - '* work done as an intern at OMRON SINIC X.'
 bibtex: >
-  # arXiv version
-
-  @article{barekatain2019multipolar,
-    title={MULTIPOLAR: Multi-Source Policy Aggregation for Transfer Reinforcement Learning between Diverse Environmental Dynamics},
-    author={Barekatain, Mohammadamin and Yonetani, Ryo and Hamaya, Masashi},
-    journal={arXiv preprint arXiv:1909.13111},
-    year={2019}
-  }
-
-  # IJCAI version
-
-  @inproceedings{barekatain2020multipolar,
-    title={MULTIPOLAR: Multi-Source Policy Aggregation for Transfer Reinforcement Learning between Diverse Environmental Dynamics},
-    author={Barekatain, Mohammadamin and Yonetani, Ryo and Hamaya, Masashi},
-    booktitle={International Joint Conference on Artificial Intelligence (IJCAI)},
-    year={2020}
+  @inproceedings{chan2026online,
+    title={Online Robot Error Detection and Description via Video Temporal Grounding},
+    author={Chan, Yung-Shun and Saito, Kuniaki and Beltran-Hernandez, Cristian C. and Siburian, Jeremy A. and Hamaya, Masashi and Lee, Chun-Yi},
+    booktitle={Conference on Robot Learning (CoRL)},
+    year={2026}
   }
 header:
-  bg_curve:
-    sinic_curve.png
-    #  bg_image: https://github.com/omron-sinicx/swarm-body/raw/main/images/teaser.jpg
+  bg_curve: sinic_curve.png
 
 teaser: teaser.png
 overview: |
-  This is a versatile template designed to satisfy your research project page needs, all while harnessing the power of **UIKit** and **React**. Built on the foundations of simplicity and flexibility, this template allows you to focus on expressing your ideas without the hassle of directly handling CSS—thanks to customizable SASS variables.
-  With markdown as your canvas and $\KaTeX$ for precise equations, crafting clear and engaging project page becomes effortless. Whether you're unraveling complex theories or presenting your findings, this template aims to support your scholarly endeavors with grace and ease.
-  *Need to edit HTML directly?* Fear not! In addition to markdown, you can also directly write HTML with ease. Feel empowered to craft your content exactly as you envision it, whether through markdown's simplicity or the precision of HTML.
+  Detecting and describing failure events during robot manipulation is critical for safe autonomous deployment, yet existing methods either reduce failures to per-frame binary scores or require the complete episode.
+  We formulate robot failure detection as an **online video temporal grounding** problem, where the model processes streaming video and outputs both the temporal boundaries and a natural-language description of each failure event *as it unfolds*.
+
+  Our framework, **STREAM-FAIL**, operates chunk-by-chunk with a memory bank over previously observed frames. To bridge the domain gap between general video understanding and manipulation reasoning, we design an automated pipeline that converts robot trajectory datasets into temporal grounding annotations for pre-training, which yields a **73% relative improvement** in temporal localization.
+  On our evaluation benchmark, the full model outperforms the strongest online grounding baseline with an **mIoU of 0.232** (versus 0.194) and produces failure descriptions with a **CIDEr score of 0.854**.
+  We release the generated dataset and the human-annotated benchmark, DETECT-DROID-FAILURE, to support future research on real-time robot failure detection, description, and recovery.
 
 body:
-  - title: Media examples
+  - title: Why online temporal grounding?
     text: |
-      You can access media files in `public` directly like: `<img src="method.png" />` 
+      A misaligned grasp is not an instantaneous event: it begins with a subtle offset during approach, escalates when the gripper closes on the wrong surface, and culminates in the object slipping from the hand. Prior robot failure detectors ignore this temporal structure — they emit scalar anomaly scores, per-frame labels, or an episode-level summary available only after the episode ends.
+
+      <img src="teaser.png" alt="" />
+      <span class="uk-text-meta">Our online temporal grounding framework detects manipulation failures in real time, outputting precise temporal boundaries paired with cause-and-effect descriptions for each failure event as the video streams. Unlike prior approaches (left), our method (right) jointly answers <b>when</b> a failure occurs and <b>why</b>, without waiting for the episode to complete.</span>
+
+      Two technical challenges make this problem difficult. First, safety-critical applications require **online inference** on an unfinished, streaming video. Second, vision-language models (VLMs) trained on general video lack the **domain-specific knowledge** of manipulation actions and physical interactions, leading to near-zero performance on robot failure videos without adaptation.
+
+      #### Comparison with related work
+      |Method|Domain|Video|Online|TG|Free-form|Cause-effect|
+      |--|--|--|--|--|--|--|
+      |TRACE|General|✓|✗|✓|✓|✗|
+      |OnVTG|General|✓|✓|✓|✗|✗|
+      |REFLECT|Robot|▲|✗|✗|✓|✗|
+      |AHA|Robot|▲|✗|✗|✓|✗|
+      |RACER|Robot|✗|✓|✗|✓|✗|
+      |**Ours (STREAM-FAIL)**|**Robot**|**✓**|**✓**|**✓**|**✓**|**✓**|
+
+      <span class="uk-text-meta">TG = temporal grounding. ▲ indicates that only a few sampled frames are used rather than full video.</span>
+  - title: 'STREAM-FAIL: Streaming Failure Analysis and Localization'
+    text: |
+      Given a video stream $\{i_t\}_{t=0}^{T}$ in which a failure spans $[s, e]$, the model may only access observations up to the current time step: when predicting an event that ends at $e$, it operates solely on $\{i_t\}_{t=0}^{e}$. The model has two objectives — (1) temporally localize the failure, and (2) generate a language description of its outcome and cause — producing a tuple $(s, e, l)$ per event.
+
+      **Architecture.** We adopt the streaming framework of OnVTG, which incrementally predicts event boundaries from incoming video chunks via a multi-scale memory buffer, and extend it with a language generation module conditioned on the grounded failure interval. Naively coupling a grounding model with a language model is non-trivial, as the latter must be trained to interpret high-dimensional visual representations. We therefore replace OnVTG's visual backbone with that of **Video-LLaMA3 (VL3)** and reuse its paired language model, inheriting VL3's video understanding and language generation while retaining online temporal grounding.
+
+      **Inference.** Once the grounding model predicts a failure event $(s, e)$, the corresponding features are retrieved from the memory buffer and passed to the language head to generate the description $l$. To maintain low-latency online inference, temporal grounding runs continuously on every incoming chunk, while language generation is executed only after an event is finalized.
+  - title: Temporally grounded captioning data generation
+    text: |
+      Adapting a general-purpose VLM to this task requires temporal grounding annotations for manipulation, a form of supervision that few existing datasets provide. We design a multi-stage VLM annotation pipeline that converts DROID episodes into temporally grounded robot-action descriptions.
 
       <img src="method.png" alt="" />
-      <span class="uk-text-meta">Example figcaption text</span>
+      <span class="uk-text-meta">Overview of the data generation pipeline. The Summary Stage produces a high-level summary enumerating all tasks; the Task Segmentation Stage decomposes the video into temporal task segments; the Phase Segmentation Stage further divides each task segment into finer-grained subtasks.</span>
 
-      See also [UIKit Video Components Documentation](https://getuikit.com/docs/video) and [Grid system](https://getuikit.com/docs/grid)
-      <div uk-slider>
-        <div class="uk-slider-items uk-child-width-1-1 uk-child-width-1-2@m" uk-grid>
-          <div>
-            <video
-              src="demo.mp4"
-              loop
-              muted
-              uk-video="autoplay:inview"
-              />
-          </div>
-          <div>
-            <video
-              src="demo.mp4"
-              loop
-              muted
-              uk-video="autoplay:inview"
-              />
-          </div>
-          <div>
-            <video
-              src="demo.mp4"
-              loop
-              muted
-              uk-video="autoplay:inview"
-              />
-          </div>
-        </div>
-        <div class="uk-flex uk-flex-center uk-margin-small">
-          <a class="uk-icon-button" href uk-slidenav-previous uk-slider-item="previous"></a>
-          <a class="uk-icon-button uk-margin-small-left" href uk-slidenav-next uk-slider-item="next"></a>
-        </div>
-      </div>
-  - title: Markdown examples
+      - **Stage 1 — Video summarization with grounded task and object.** Generates a high-level summary as an ordered list of temporally sequential tasks (e.g. a pick-and-place behavior is decomposed into grasping the object and releasing it at the target).
+      - **Stage 2 — Task-level segmentation.** Localizes each task within the video and produces a more detailed description per task segment.
+      - **Stage 3 — Phase-level segmentation.** Splits each task clip into manipulation phases from a fixed taxonomy — *exploring, approaching, aligning, contacting, releasing, resetting* — yielding tuples $(s, e, l, p)$.
+
+      The output of each stage is verified by an additional VLM-based consistency check before being passed on. Two VLMs are used across the pipeline, **Qwen3.5-VL-122B** and **Cosmos-Reason2-8B**, and for every stage the verifier runs on the opposite backbone from the generator so the two models cross-check each other.
+
+      Applied to the full DROID dataset, the pipeline processes **95K robot videos**, producing on average 1.8 tasks per video and 5.61 phases per task — approximately **950K phase tuples** in total. We then pre-train on this generated corpus and fine-tune on the human-annotated benchmark.
+  - title: 'Benchmark: DETECT-DROID-FAILURE'
     text: |
-      Here's our demo text showcasing the power of markdown and KaTeX integration!
-      Markdown allows you to easily format text using simple syntax.
-      - **bold**
-      - *italic*
-      - `inline code`.
+      Existing robot failure datasets provide episode-level labels or frame-level anomaly scores, and general-purpose video grounding datasets contain no manipulation content — so neither the training data nor the evaluation benchmark this formulation requires currently exists. We introduce **DETECT-DROID-FAILURE**, built on top of the DROID dataset, which contains annotated failure events in real-world manipulation trajectories, each labeled with its temporal extent and a natural-language cause. DROID contains roughly 16,000 unsuccessful trajectories, the largest publicly available source of real-world robot failure events to our knowledge.
 
-      You can also create headings of various levels:
-      # Heading Level 1
-      ## Heading Level 2
-      ### Heading Level 3
-      #### Heading Level 4
-      Markdown allows you to create tables like the following:
-      #### Motion Planning (MP) Dataset
-      markdown version
-      |Method|Opt|Exp|Hmean|
-      |--|--|--|--|
-      |BF| 65.8 (63.8, 68.0)| 44.1 (42.8, 45.5) | 44.8 (43.4, 46.3)|
-      |WA*| 68.4 (66.5, 70.4)| 35.8 (34.5, 37.1) | 40.4 (39.0, 41.8)|
-      |**Neural A*** | **87.7 (86.6, 88.9)**| 40.1 (38.9, 41.3) | 52.0 (50.7, 53.3)|
+      **Temporal boundary annotation.** Annotators labeled the start time $s_j$ and end time $e_j$ of each failure event. The start is the earliest moment at which the *cause* of the failure becomes observable (for a failed spoon grasp, the moment the gripper makes unstable contact); the end is the moment the *outcome* becomes apparent (the spoon slipping from the gripper onto the floor). Each interval therefore captures both the causal process and its observable consequence.
 
-      Of course, you can also directly write tables in HTML if needed. For more details, refer to the [UIKit Table documentation](https://getuikit.com/docs/table).
-      <h4>Motion Planning (MP) Dataset</h4>
-      <p>HTML version</p>
-      <div class="uk-overflow-auto">
-        <table class="uk-table uk-table-small uk-text-small uk-table-divider">
-          <thead>
-            <tr>
-              <th>Method</th>
-              <th>Opt</th>
-              <th>Exp</th>
-              <th>Hmean</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                BF
-                <br />
-                WA*
-              </td>
-              <td>
-                65.8 (63.8, 68.0)
-                <br />
-                68.4 (66.5, 70.4)
-              </td>
-              <td>
-                44.1 (42.8, 45.5)
-                <br />
-                35.8 (34.5, 37.1)
-              </td>
-              <td>
-                44.8 (43.4, 46.3)
-                <br />
-                40.4 (39.0, 41.8)
-              </td>
-            </tr>
-            <tr>
-              <td>
-                SAIL
-                <br />
-                SAIL-SL
-                <br />
-                BB-A*
-              </td>
-              <td>
-                5.7 (4.6, 6.8)
-                <br />
-                3.1 (2.3, 3.8)
-                <br />
-                31.2 (28.8, 33.5)
-              </td>
-              <td>
-                58.0 (56.1, 60.0)
-                <br />
-                57.6 (55.7, 59.6)
-                <br />
-                52.0 (50.2, 53.9)
-              </td>
-              <td>
-                7.7 (6.4, 9.0)
-                <br />
-                4.4 (3.5, 5.3)
-                <br />
-                31.1 (29.2, 33.0)
-              </td>
-            </tr>
-            <tr class="uk-active">
-              <td>
-                Neural BF
-                <br />
-                <b>Neural A*</b>
-              </td>
-              <td>
-                75.5 (73.8, 77.1)
-                <br />
-                <b>87.7 (86.6, 88.9)</b>
-              </td>
-              <td>
-                45.9 (44.6, 47.2)
-                <br />
-                40.1 (38.9, 41.3)
-              </td>
-              <td>
-                52.0 (50.7, 53.4)
-                <br />
-                52.0 (50.7, 53.3)
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <h3>Selected Path Planning Results</h3>
-      <img
-        src="assets/result1.png"
-        class="uk-align-center uk-responsive-width"
-        alt=""
-      />
-      <h3>Path Planning Results on SSD Dataset</h3>
-      <img
-        src="assets/result2.png"
-        class="uk-align-center uk-responsive-width"
-        alt=""
-      />
-  - title: KaTeX examples
-    text: >
-      $\KaTeX$ enables you to write mathematical expressions beautifully within your text (e.g. $\alpha$, $\beta$, $\gamma$ ).
-      $$ax^2 + bx + c = 0$$
-      $$ \int \oint \sum \prod $$
-      $$ \begin{CD} A @>a>> B \\ @VbVV @AAcA \\ C @= D \end{CD} $$
-      [KaTeX supports a wide range of mathematical symbols and equations](https://katex.org/docs/support_table.html), ensuring your technical content is both clear and visually appealing.
-      With markdown for text formatting and KaTeX for mathematical expressions, our template empowers you to communicate complex ideas effectively. Whether you're writing a scientific paper or a technical blog post, harnessing these tools will elevate your content and engage your readers.
+      **Failure description annotation.** Each event carries a description with two components — the **outcome** ("The spoon slipped out of the gripper and fell onto the floor.") and the **cause** ("The robot grasped the spoon near its tip, which produced an unstable hold."). Annotators were explicitly instructed to separate causes from outcomes so that the annotations support causal analysis in addition to temporal detection.
+  - title: Results
+    text: |
+      Localization is reported as mean temporal IoU (mIoU) and F1 at IoU thresholds of 0.3/0.5/0.7. Frame-wise baselines, which emit a per-frame anomaly score rather than intervals, are scored by **Hit-rate** (fraction of videos whose peak anomaly frame falls inside a ground-truth interval) and **Mean distance** (seconds from that frame to the nearest interval edge). Description quality is measured **only on events localized correctly at IoU 0.7**, which prevents a fluent description of a mistimed detection from inflating the score.
+
+      #### Comparison with prior robot failure methods
+      |Method|Hit-rate ↑|Mean dist ↓|CIDEr@0.7 ↑|LLM ↑|
+      |--|--|--|--|--|
+      |FINO-Net|0.007|8.34|–|–|
+      |MGFN|0.068|6.77|–|–|
+      |AHA|–|–|0.000|1.21|
+      |**STREAM-FAIL**|**0.426**|**1.48**|**0.854**|**2.56**|
+
+      <span class="uk-text-meta">FINO-Net and MGFN are anomaly scorers and apply to localization only; AHA emits a single global description. Within a single online pass, STREAM-FAIL locates a failure to within roughly a second of its onset <i>and</i> describes it.</span>
+
+      #### Effect of pretraining on the generated corpus
+      |Backbone|Pre-trained|mIoU|F1@0.7|F1@0.3|CIDEr@0.7|LLM|
+      |--|--|--|--|--|--|--|
+      |VL3-2B| |0.0464|0.0033|0.0845|0.000|1.71|
+      |VL3-2B|✓|0.1140|0.0121|0.0551|0.1902|1.67|
+      |VL3-7B| |0.0877|0.0106|0.2430|0.000|2.03|
+      |**VL3-7B**|**✓**|**0.1522**|**0.1113**|0.1910|**0.745**|**2.65**|
+      |Cosmos| |0.1265|0.0085|0.2134|0.004|1.65|
+      |Cosmos|✓|0.1192|0.0091|0.2231|0.032|2.72|
+
+      <span class="uk-text-meta">Evaluated before any fine-tuning on DETECT-DROID-FAILURE. Without pretraining, a general video-language model is close to unusable on the task. The gain is largest for VL3-7B — the backbone we adopt — where mIoU improves by 73% and description quality rises from near zero.</span>
+
+      #### Effect of the generated corpus on downstream fine-tuning
+      |Generated data|mIoU|F1@0.7|F1@0.3|CIDEr@0.7|LLM|
+      |--|--|--|--|--|--|
+      | |0.2365|0.1833|0.3040|1.006|3.16|
+      |✓|**0.2471**|**0.1990**|**0.3082**|**1.182**|**3.19**|
+
+      <span class="uk-text-meta">VL3-7B fine-tuned on DETECT-DROID-FAILURE with and without the generated corpus as prior pretraining. The two sources are complementary: human annotation contributes precise boundaries and reference wording, while the generated corpus supplies the same supervision at a scale manual effort cannot match.</span>
+
+      #### Architecture comparison
+      |Architecture|mIoU ↑|F1@0.7 ↑|CIDEr@0.7 ↑|LLM ↑|
+      |--|--|--|--|--|
+      |OnVTG|0.1941|**0.1411**|–|–|
+      |**STREAM-FAIL**|**0.2315**|0.1365|**0.8544**|**2.56**|
+
+      <span class="uk-text-meta">Both models fine-tuned on identical data, so architecture is the only difference. Replacing the specialized backbone with a video-language model and adding a language head preserves localization — mIoU is in fact higher — while adding the description OnVTG cannot provide.</span>
+  - title: Qualitative results
+    text: |
+      <img src="result1.png" alt="" />
+      <span class="uk-text-meta">Qualitative comparison on two challenging episodes from DETECT-DROID-FAILURE. <b>Left:</b> a compound failure with two consecutive failed pickups — the baselines smear a single anomaly score across both or collapse them into one summary, whereas STREAM-FAIL emits a distinct tuple per attempt. <b>Right:</b> a success-looking failure in which the block misaligns with the cup and strikes its rim — the baselines report no failure at all, whereas STREAM-FAIL localizes the misalignment and explains it.</span>
+  - title: Limitations
+    text: |
+      Two limitations bound the present study. The evaluation covers real-world manipulation trajectories from DROID; extending the approach to other embodiments, longer-horizon tasks, and non-manipulation settings remains future work. The detector is also studied as a standalone monitor — integrating its outputs into a recovery or vision-language-action policy, the deployment scenario that motivates this work, is a natural and important next direction.
 projects:
-  - title: 'maru: a miniature-sized wheeled robot for swarm robotics research'
-    journal: "CHI'24"
-    img: https://getuikit.com/docs/images/light.jpg
-    description: |
-      "maru" (= miniature assemblage adaptive robot unit) is a custom-made, miniature-sized, two-wheeled robot designed specifically for tabletop swarm robotics research.
-    url: https://github.com/omron-sinicx/swarm-body
-  - title: 'Language-Guided Pattern Formation for Swarm Robotics with Multi-Agent Reinforcement Learning'
-    journal: "IROS'24"
-    img: https://omron-sinicx.github.io/language-guided-pattern-formation/assets/teaser.png
-    description: |
-      "maru" (= miniature assemblage adaptive robot unit) is a custom-made, miniature-sized, two-wheeled robot designed specifically for tabletop swarm robotics research.
-    url: https://github.com/omron-sinicx/swarm-body
-  - title: 'Language-Guided Pattern Formation for Swarm Robotics with Multi-Agent Reinforcement Learning'
-    journal: "IROS'24"
-    img: method.png
-    description: |
-      "maru" (= miniature assemblage adaptive robot unit) is a custom-made, miniature-sized, two-wheeled robot designed specifically for tabletop swarm robotics research.
-    url: https://github.com/omron-sinicx/swarm-body
