@@ -37,8 +37,8 @@ class Template extends React.Component {
           <meta property="og:description" content={data.description} />
           <meta property="og:image" content={data.image} />
           <meta property="og:image:alt" content={data.description} />
-          <meta property="og:image:width" content="1200" />
-          <meta property="og:image:height" content="600" />
+          <meta property="og:image:width" content="1800" />
+          <meta property="og:image:height" content="778" />
           <meta property="og:url" content={data.url} />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={data.title} />

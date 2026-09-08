@@ -6,18 +6,18 @@ conference: CoRL2026
 resources:
   paper: # TODO: arXiv / OpenReview link
   poster:
-  code: # TODO: https://github.com/omron-sinicx/stream-fail
+  code: # TODO: https://github.com/omron-sinicx/Online_Robot_Error_Detection
   video:
   blog:
   demo:
   huggingface: # TODO: DETECT-DROID-FAILURE dataset link
 description: We formulate robot failure detection as online video temporal grounding, predicting the temporal boundaries and a cause-and-effect description of each manipulation failure as the video streams.
-image: https://omron-sinicx.github.io/stream-fail/teaser.png
-url: https://omron-sinicx.github.io/stream-fail
+image: https://omron-sinicx.github.io/Online_Robot_Error_Detection/teaser.png
+url: https://omron-sinicx.github.io/Online_Robot_Error_Detection
 speakerdeck:
 authors:
   - name: Yung-Shun Chan
-    affiliation: [1, 2]
+    affiliation: [2]
     mark: '*'
     url:
     position: intern
@@ -69,10 +69,7 @@ overview: |
 body:
   - title: Why online temporal grounding?
     text: |
-      A misaligned grasp is not an instantaneous event: it begins with a subtle offset during approach, escalates when the gripper closes on the wrong surface, and culminates in the object slipping from the hand. Prior robot failure detectors ignore this temporal structure — they emit scalar anomaly scores, per-frame labels, or an episode-level summary available only after the episode ends.
-
-      <img src="teaser.png" alt="" />
-      <span class="uk-text-meta">Our online temporal grounding framework detects manipulation failures in real time, outputting precise temporal boundaries paired with cause-and-effect descriptions for each failure event as the video streams. Unlike prior approaches (left), our method (right) jointly answers <b>when</b> a failure occurs and <b>why</b>, without waiting for the episode to complete.</span>
+      A misaligned grasp is not an instantaneous event: it begins with a subtle offset during approach, escalates when the gripper closes on the wrong surface, and culminates in the object slipping from the hand. Prior robot failure detectors ignore this temporal structure — they emit scalar anomaly scores, per-frame labels, or an episode-level summary available only after the episode ends. As shown in the figure above, our method instead answers **when** a failure occurs and **why**, without waiting for the episode to complete or for offline post-processing.
 
       Two technical challenges make this problem difficult. First, safety-critical applications require **online inference** on an unfinished, streaming video. Second, vision-language models (VLMs) trained on general video lack the **domain-specific knowledge** of manipulation actions and physical interactions, leading to near-zero performance on robot failure videos without adaptation.
 
@@ -98,7 +95,7 @@ body:
     text: |
       Adapting a general-purpose VLM to this task requires temporal grounding annotations for manipulation, a form of supervision that few existing datasets provide. We design a multi-stage VLM annotation pipeline that converts DROID episodes into temporally grounded robot-action descriptions.
 
-      <img src="method.png" alt="" />
+      <img src="pipeline.png" alt="" />
       <span class="uk-text-meta">Overview of the data generation pipeline. The Summary Stage produces a high-level summary enumerating all tasks; the Task Segmentation Stage decomposes the video into temporal task segments; the Phase Segmentation Stage further divides each task segment into finer-grained subtasks.</span>
 
       - **Stage 1 — Video summarization with grounded task and object.** Generates a high-level summary as an ordered list of temporally sequential tasks (e.g. a pick-and-place behavior is decomposed into grasping the object and releasing it at the target).
@@ -158,7 +155,7 @@ body:
       <span class="uk-text-meta">Both models fine-tuned on identical data, so architecture is the only difference. Replacing the specialized backbone with a video-language model and adding a language head preserves localization — mIoU is in fact higher — while adding the description OnVTG cannot provide.</span>
   - title: Qualitative results
     text: |
-      <img src="result1.png" alt="" />
+      <img src="qualitative.png" alt="" />
       <span class="uk-text-meta">Qualitative comparison on two challenging episodes from DETECT-DROID-FAILURE. <b>Left:</b> a compound failure with two consecutive failed pickups — the baselines smear a single anomaly score across both or collapse them into one summary, whereas STREAM-FAIL emits a distinct tuple per attempt. <b>Right:</b> a success-looking failure in which the block misaligns with the cup and strikes its rim — the baselines report no failure at all, whereas STREAM-FAIL localizes the misalignment and explains it.</span>
   - title: Limitations
     text: |
