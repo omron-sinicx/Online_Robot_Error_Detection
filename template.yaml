@@ -44,7 +44,7 @@ authors:
 contact_ids: ['omron', 1] #=> contact@sinicx.com, 3rd author
 affiliations:
   - OMRON SINIC X Corporation
-  - National Taiwan University
+  - Elsa Lab, National Taiwan University
 meta:
   - '* work done as an intern at OMRON SINIC X.'
 bibtex: >
@@ -59,105 +59,75 @@ header:
 
 teaser: teaser.png
 overview: |
-  Detecting and describing failure events during robot manipulation is critical for safe autonomous deployment, yet existing methods either reduce failures to per-frame binary scores or require the complete episode.
-  We formulate robot failure detection as an **online video temporal grounding** problem, where the model processes streaming video and outputs both the temporal boundaries and a natural-language description of each failure event *as it unfolds*.
+  Prior robot failure detectors either reduce a failure to a per-frame anomaly score or summarize it only once the episode is over. We instead formulate failure detection as **online video temporal grounding**: as the video streams, **STREAM-FAIL** emits the temporal boundaries of each failure together with a natural-language cause-and-effect description.
 
-  Our framework, **STREAM-FAIL**, operates chunk-by-chunk with a memory bank over previously observed frames. To bridge the domain gap between general video understanding and manipulation reasoning, we design an automated pipeline that converts robot trajectory datasets into temporal grounding annotations for pre-training, which yields a **73% relative improvement** in temporal localization.
-  On our evaluation benchmark, the full model outperforms the strongest online grounding baseline with an **mIoU of 0.232** (versus 0.194) and produces failure descriptions with a **CIDEr score of 0.854**.
-  We release the generated dataset and the human-annotated benchmark, DETECT-DROID-FAILURE, to support future research on real-time robot failure detection, description, and recovery.
+  Because general video-language models have little manipulation knowledge, we also build an automatic pipeline that turns unlabeled robot trajectories into temporally grounded annotations for pre-training &mdash; worth a **73% relative gain** in localization. We release both the generated corpus and **DETECT-DROID-FAILURE**, a human-annotated benchmark of real-world failures.
 
 body:
   - title: Why online temporal grounding?
     text: |
-      A misaligned grasp is not an instantaneous event: it begins with a subtle offset during approach, escalates when the gripper closes on the wrong surface, and culminates in the object slipping from the hand. Prior robot failure detectors ignore this temporal structure — they emit scalar anomaly scores, per-frame labels, or an episode-level summary available only after the episode ends. As shown in the figure above, our method instead answers **when** a failure occurs and **why**, without waiting for the episode to complete or for offline post-processing.
-
-      Two technical challenges make this problem difficult. First, safety-critical applications require **online inference** on an unfinished, streaming video. Second, vision-language models (VLMs) trained on general video lack the **domain-specific knowledge** of manipulation actions and physical interactions, leading to near-zero performance on robot failure videos without adaptation.
+      A misaligned grasp is not an instantaneous event: it begins with a subtle offset during approach, escalates when the gripper closes on the wrong surface, and ends with the object slipping from the hand. Capturing that span &mdash; and explaining it &mdash; is what a recovery policy or a human operator actually needs. Prior work gives only an anomaly score, a post-hoc episode summary, or a frame-level label; we answer **when** a failure occurs and **why**, in a single streaming pass.
 
       #### Comparison with related work
       |Method|Domain|Video|Online|TG|Free-form|Cause-effect|
       |--|--|--|--|--|--|--|
-      |TRACE|General|✓|✗|✓|✓|✗|
-      |OnVTG|General|✓|✓|✓|✗|✗|
-      |REFLECT|Robot|▲|✗|✗|✓|✗|
-      |AHA|Robot|▲|✗|✗|✓|✗|
-      |RACER|Robot|✗|✓|✗|✓|✗|
-      |**Ours (STREAM-FAIL)**|**Robot**|**✓**|**✓**|**✓**|**✓**|**✓**|
+      |TRACE|General|&check;|&cross;|&check;|&check;|&cross;|
+      |OnVTG|General|&check;|&check;|&check;|&cross;|&cross;|
+      |REFLECT|Robot|&#9650;|&cross;|&#9650;|&check;|&cross;|
+      |AHA|Robot|&#9650;|&cross;|&cross;|&check;|&cross;|
+      |RACER|Robot|&cross;|&check;|&cross;|&check;|&cross;|
+      |**Ours (STREAM-FAIL)**|**Robot**|**&check;**|**&check;**|**&check;**|**&check;**|**&check;**|
 
-      <span class="uk-text-meta">TG = temporal grounding. ▲ indicates that only a few sampled frames are used rather than full video.</span>
+      <span class="uk-text-meta">TG = temporal grounding. &#9650; = partial (e.g. only a few sampled frames rather than full video).</span>
+  - title: Generating temporally grounded supervision at scale
+    text: |
+      A general video-language model knows little about manipulation, and no public dataset pairs time intervals with robot-action descriptions. So we generate that supervision: a multi-stage VLM pipeline turns unlabeled DROID episodes into temporally grounded captions for pre-training.
+
+      <img src="pipeline.png" alt="Data generation pipeline" />
+      <span class="uk-text-meta">Three sequential stages turn an unlabeled DROID episode into grounded robot-action descriptions.</span>
+
+      - **Stage 1 &mdash; Summary.** Enumerate the tasks in the episode as an ordered list, anchored by task recognition, an active-object trace, and a gripper state chain that together suppress hallucinated objects and actions.
+      - **Stage 2 &mdash; Task segmentation.** Localize each task as a time interval and describe it.
+      - **Stage 3 &mdash; Phase segmentation.** Split each task clip into manipulation phases from a fixed taxonomy &mdash; *exploring, approaching, aligning, contacting, releasing, resetting* &mdash; yielding tuples $(s, e, l, p)$.
+
+      Every stage is verified by a second VLM running on the *opposite* backbone from the generator (**Qwen3.5-VL-122B** and **Cosmos-Reason2-8B**), so the two models cross-check each other. Over the full DROID dataset this processes **95K videos** into roughly **950K phase tuples** &mdash; 1.8 tasks per video, 5.61 phases per task.
   - title: 'STREAM-FAIL: Streaming Failure Analysis and Localization'
     text: |
-      Given a video stream $\{i_t\}_{t=0}^{T}$ in which a failure spans $[s, e]$, the model may only access observations up to the current time step: when predicting an event that ends at $e$, it operates solely on $\{i_t\}_{t=0}^{e}$. The model has two objectives — (1) temporally localize the failure, and (2) generate a language description of its outcome and cause — producing a tuple $(s, e, l)$ per event.
+      <img src="architecture.png" alt="STREAM-FAIL architecture" />
+      <span class="uk-text-meta">Video arrives in chunks and is encoded by the VL3 vision encoder into per-layer FIFO memory at fixed cost. A future-prediction branch raises an early alarm and the start <i>s</i>; the proposal heads commit the end <i>e</i>; the language head then decodes the description <i>l</i> from the window features over [<i>s</i>, <i>e</i>].</span>
 
-      **Architecture.** We adopt the streaming framework of OnVTG, which incrementally predicts event boundaries from incoming video chunks via a multi-scale memory buffer, and extend it with a language generation module conditioned on the grounded failure interval. Naively coupling a grounding model with a language model is non-trivial, as the latter must be trained to interpret high-dimensional visual representations. We therefore replace OnVTG's visual backbone with that of **Video-LLaMA3 (VL3)** and reuse its paired language model, inheriting VL3's video understanding and language generation while retaining online temporal grounding.
-
-      **Inference.** Once the grounding model predicts a failure event $(s, e)$, the corresponding features are retrieved from the memory buffer and passed to the language head to generate the description $l$. To maintain low-latency online inference, temporal grounding runs continuously on every incoming chunk, while language generation is executed only after an event is finalized.
-  - title: Temporally grounded captioning data generation
-    text: |
-      Adapting a general-purpose VLM to this task requires temporal grounding annotations for manipulation, a form of supervision that few existing datasets provide. We design a multi-stage VLM annotation pipeline that converts DROID episodes into temporally grounded robot-action descriptions.
-
-      <img src="pipeline.png" alt="" />
-      <span class="uk-text-meta">Overview of the data generation pipeline. The Summary Stage produces a high-level summary enumerating all tasks; the Task Segmentation Stage decomposes the video into temporal task segments; the Phase Segmentation Stage further divides each task segment into finer-grained subtasks.</span>
-
-      - **Stage 1 — Video summarization with grounded task and object.** Generates a high-level summary as an ordered list of temporally sequential tasks (e.g. a pick-and-place behavior is decomposed into grasping the object and releasing it at the target).
-      - **Stage 2 — Task-level segmentation.** Localizes each task within the video and produces a more detailed description per task segment.
-      - **Stage 3 — Phase-level segmentation.** Splits each task clip into manipulation phases from a fixed taxonomy — *exploring, approaching, aligning, contacting, releasing, resetting* — yielding tuples $(s, e, l, p)$.
-
-      The output of each stage is verified by an additional VLM-based consistency check before being passed on. Two VLMs are used across the pipeline, **Qwen3.5-VL-122B** and **Cosmos-Reason2-8B**, and for every stage the verifier runs on the opposite backbone from the generator so the two models cross-check each other.
-
-      Applied to the full DROID dataset, the pipeline processes **95K robot videos**, producing on average 1.8 tasks per video and 5.61 phases per task — approximately **950K phase tuples** in total. We then pre-train on this generated corpus and fine-tune on the human-annotated benchmark.
+      Given a stream, the model may condition only on frames up to the current step, and must output a tuple $(s, e, l)$ per failure. We build on **OnVTG**'s streaming proposal framework but replace its visual backbone with that of **Video-LLaMA3 (VL3)** and reuse the paired language model, so the architecture inherits VL3's video understanding and language generation while keeping online grounding. Grounding runs on every incoming chunk for low latency; the language head runs only once an interval is committed, decoding from the localized visual features rather than from boundary tokens.
   - title: 'Benchmark: DETECT-DROID-FAILURE'
     text: |
-      Existing robot failure datasets provide episode-level labels or frame-level anomaly scores, and general-purpose video grounding datasets contain no manipulation content — so neither the training data nor the evaluation benchmark this formulation requires currently exists. We introduce **DETECT-DROID-FAILURE**, built on top of the DROID dataset, which contains annotated failure events in real-world manipulation trajectories, each labeled with its temporal extent and a natural-language cause. DROID contains roughly 16,000 unsuccessful trajectories, the largest publicly available source of real-world robot failure events to our knowledge.
+      No existing resource pairs failure boundaries with causal descriptions on real robots, so we annotate one by hand on top of DROID, which holds ~16,000 unsuccessful trajectories. For each event, the **start** is the earliest moment the *cause* becomes observable (the gripper making unstable contact with a spoon) and the **end** is the moment the *outcome* is apparent (the spoon hitting the floor); each description likewise separates outcome from cause, so the annotations support causal analysis and not just detection.
 
-      **Temporal boundary annotation.** Annotators labeled the start time $s_j$ and end time $e_j$ of each failure event. The start is the earliest moment at which the *cause* of the failure becomes observable (for a failed spoon grasp, the moment the gripper makes unstable contact); the end is the moment the *outcome* becomes apparent (the spoon slipping from the gripper onto the floor). Each interval therefore captures both the causal process and its observable consequence.
-
-      **Failure description annotation.** Each event carries a description with two components — the **outcome** ("The spoon slipped out of the gripper and fell onto the floor.") and the **cause** ("The robot grasped the spoon near its tip, which produced an unstable hold."). Annotators were explicitly instructed to separate causes from outcomes so that the annotations support causal analysis in addition to temporal detection.
+      The held-out split used throughout the results carries **1,212 episodes** with **1,466 failure events**, plus **180 verified failure-free episodes** on which any predicted interval counts as a false positive, and is disjoint by trajectory ID from all training data.
   - title: Results
     text: |
-      Localization is reported as mean temporal IoU (mIoU) and F1 at IoU thresholds of 0.3/0.5/0.7. Frame-wise baselines, which emit a per-frame anomaly score rather than intervals, are scored by **Hit-rate** (fraction of videos whose peak anomaly frame falls inside a ground-truth interval) and **Mean distance** (seconds from that frame to the nearest interval edge). Description quality is measured **only on events localized correctly at IoU 0.7**, which prevents a fluent description of a mistimed detection from inflating the score.
+      Localization is scored by mean temporal IoU and F1 at IoU thresholds. Description quality is measured **only on events localized correctly at IoU 0.7**, so a fluent description of a mistimed detection cannot inflate the score.
 
-      #### Comparison with prior robot failure methods
-      |Method|Hit-rate ↑|Mean dist ↓|CIDEr@0.7 ↑|LLM ↑|
+      #### Architecture comparison *(online, 5 seeds)*
+      |Architecture|mIoU &uarr;|F1@0.7 &uarr;|CIDEr@0.7 &uarr;|LLM &uarr;|
       |--|--|--|--|--|
-      |FINO-Net|0.007|8.34|–|–|
-      |MGFN|0.068|6.77|–|–|
-      |AHA|–|–|0.000|1.21|
-      |**STREAM-FAIL**|**0.426**|**1.48**|**0.854**|**2.56**|
+      |OnVTG|0.201 &plusmn; 0.012|**0.152 &plusmn; 0.010**|-|-|
+      |**STREAM-FAIL**|**0.228 &plusmn; 0.008**|0.149 &plusmn; 0.018|**0.854**|**2.56**|
 
-      <span class="uk-text-meta">FINO-Net and MGFN are anomaly scorers and apply to localization only; AHA emits a single global description. Within a single online pass, STREAM-FAIL locates a failure to within roughly a second of its onset <i>and</i> describes it.</span>
+      <span class="uk-text-meta">Both fine-tuned on identical data, so architecture is the only difference. Swapping in a video-language backbone and adding a language head gains the description OnVTG cannot produce, at no cost to localization: mIoU is higher, the F1@0.7 gap of 0.003 sits inside either model's seed spread, and on the failure-free episodes STREAM-FAIL fires slightly less often (1.44 vs 1.60 spurious detections per episode).</span>
 
-      #### Effect of pretraining on the generated corpus
+      #### Effect of pre-training on the generated corpus *(offline, before any fine-tuning)*
       |Backbone|Pre-trained|mIoU|F1@0.7|F1@0.3|CIDEr@0.7|LLM|
       |--|--|--|--|--|--|--|
       |VL3-2B| |0.0464|0.0033|0.0845|0.000|1.71|
-      |VL3-2B|✓|0.1140|0.0121|0.0551|0.1902|1.67|
-      |VL3-7B| |0.0877|0.0106|0.2430|0.000|2.03|
-      |**VL3-7B**|**✓**|**0.1522**|**0.1113**|0.1910|**0.745**|**2.65**|
+      |VL3-2B|&check;|0.1140|0.0121|0.0551|0.1902|1.67|
+      |VL3-7B| |0.0877|0.0106|**0.2430**|0.000|2.03|
+      |**VL3-7B**|**&check;**|**0.1522**|**0.1113**|0.1910|**0.745**|**2.65**|
       |Cosmos| |0.1265|0.0085|0.2134|0.004|1.65|
-      |Cosmos|✓|0.1192|0.0091|0.2231|0.032|2.72|
+      |Cosmos|&check;|0.1192|0.0091|0.2231|0.032|**2.72**|
 
-      <span class="uk-text-meta">Evaluated before any fine-tuning on DETECT-DROID-FAILURE. Without pretraining, a general video-language model is close to unusable on the task. The gain is largest for VL3-7B — the backbone we adopt — where mIoU improves by 73% and description quality rises from near zero.</span>
+      <span class="uk-text-meta">Pre-trained on the generated corpus <i>alone</i>, which contains no failure annotations. Without it, a general video-language model produces no usable descriptions (CIDEr &le; 0.004). The gain is largest on VL3-7B, the backbone we deploy: mIoU improves by <b>73%</b> and description quality rises from zero.</span>
 
-      #### Effect of the generated corpus on downstream fine-tuning
-      |Generated data|mIoU|F1@0.7|F1@0.3|CIDEr@0.7|LLM|
-      |--|--|--|--|--|--|
-      | |0.2365|0.1833|0.3040|1.006|3.16|
-      |✓|**0.2471**|**0.1990**|**0.3082**|**1.182**|**3.19**|
-
-      <span class="uk-text-meta">VL3-7B fine-tuned on DETECT-DROID-FAILURE with and without the generated corpus as prior pretraining. The two sources are complementary: human annotation contributes precise boundaries and reference wording, while the generated corpus supplies the same supervision at a scale manual effort cannot match.</span>
-
-      #### Architecture comparison
-      |Architecture|mIoU ↑|F1@0.7 ↑|CIDEr@0.7 ↑|LLM ↑|
-      |--|--|--|--|--|
-      |OnVTG|0.1941|**0.1411**|–|–|
-      |**STREAM-FAIL**|**0.2315**|0.1365|**0.8544**|**2.56**|
-
-      <span class="uk-text-meta">Both models fine-tuned on identical data, so architecture is the only difference. Replacing the specialized backbone with a video-language model and adding a language head preserves localization — mIoU is in fact higher — while adding the description OnVTG cannot provide.</span>
-  - title: Qualitative results
-    text: |
-      <img src="qualitative.png" alt="" />
-      <span class="uk-text-meta">Qualitative comparison on two challenging episodes from DETECT-DROID-FAILURE. <b>Left:</b> a compound failure with two consecutive failed pickups — the baselines smear a single anomaly score across both or collapse them into one summary, whereas STREAM-FAIL emits a distinct tuple per attempt. <b>Right:</b> a success-looking failure in which the block misaligns with the cup and strikes its rim — the baselines report no failure at all, whereas STREAM-FAIL localizes the misalignment and explains it.</span>
+      The corpus also helps once human labels are available: mixing it into the fine-tuning recipe improves every metric on the benchmark (mIoU 0.2365 &rarr; **0.2471**, CIDEr@0.7 1.006 &rarr; **1.182**, offline). Human annotation supplies precise boundaries and reference wording; the generated corpus supplies the same kind of supervision at a scale manual effort cannot reach.
   - title: Limitations
     text: |
-      Two limitations bound the present study. The evaluation covers real-world manipulation trajectories from DROID; extending the approach to other embodiments, longer-horizon tasks, and non-manipulation settings remains future work. The detector is also studied as a standalone monitor — integrating its outputs into a recovery or vision-language-action policy, the deployment scenario that motivates this work, is a natural and important next direction.
+      Absolute reliability is still modest &mdash; mIoU 0.228, 1.44 spurious detections per failure-free episode, a mean judge score of 2.56 out of 5 &mdash; so STREAM-FAIL should be treated as an aid that flags and explains candidate failures, not as a safety guarantee. The evaluation also covers only DROID manipulation trajectories, and the benchmark relies on costly human annotation. Closing the loop with a recovery or vision-language-action policy, and a larger real-robot evaluation, are the natural next steps.
 projects:
